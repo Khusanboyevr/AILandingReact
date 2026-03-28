@@ -1,8 +1,10 @@
+import { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { clearToken } from '../utils/auth';
 
 const AppLayout = ({ children }) => {
   const navigate = useNavigate();
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const handleLogout = () => {
     clearToken();
@@ -17,11 +19,30 @@ const AppLayout = ({ children }) => {
 
   return (
     <div className="app-layout">
+      {/* Mobile Header (Visible only on mobile) */}
+      <div className="app-mobile-header">
+        <div className="app-sidebar-logo mobile-logo">
+          <i className="bx bx-atom" />
+          <span>DGU <span className="gradient-text">AI</span></span>
+        </div>
+        <button className="mobile-menu-btn" onClick={() => setIsSidebarOpen(true)}>
+          <i className="bx bx-menu" />
+        </button>
+      </div>
+
+      {/* Mobile Overlay */}
+      {isSidebarOpen && (
+        <div className="app-sidebar-overlay" onClick={() => setIsSidebarOpen(false)} />
+      )}
+
       {/* Sidebar */}
-      <aside className="app-sidebar">
+      <aside className={`app-sidebar ${isSidebarOpen ? 'open' : ''}`}>
         <div className="app-sidebar-logo">
           <i className="bx bx-atom" />
           <span>DGU <span className="gradient-text">AI</span></span>
+          <button className="mobile-close-btn" onClick={() => setIsSidebarOpen(false)}>
+            <i className="bx bx-x" />
+          </button>
         </div>
 
         <nav className="app-sidebar-nav">
@@ -30,6 +51,7 @@ const AppLayout = ({ children }) => {
               key={item.to}
               to={item.to}
               end={item.end}
+              onClick={() => setIsSidebarOpen(false)}
               className={({ isActive }) => `app-nav-item ${isActive ? 'active' : ''}`}
             >
               <i className={`bx ${item.icon}`} />

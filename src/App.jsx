@@ -7,7 +7,6 @@ import Hero from './components/Hero';
 import About from './components/About';
 import Features from './components/Features';
 import Dashboard from './components/Dashboard';
-import Contact from './components/Contact';
 import Footer from './components/Footer';
 
 // Dashboard app
@@ -51,7 +50,6 @@ const LandingPage = () => {
         <About />
         <Features />
         <Dashboard />
-        <Contact />
       </main>
       <Footer />
     </>

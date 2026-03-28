@@ -7,7 +7,7 @@ const Hero = () => {
                         <span className="pulse-dot"></span>
                         № DGU 53519 Dasturi
                     </div>
-                    <h1 className="hero-title" style={{ fontSize: '3.6rem' }}>
+                    <h1 className="hero-title">
                         Metrologiya Tekshiruvlari Uchun <span className="gradient-text">Bashoratli AI Tahlil</span> Tizimi
                     </h1>
                     <p className="hero-subtitle">

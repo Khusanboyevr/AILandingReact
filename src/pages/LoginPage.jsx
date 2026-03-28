@@ -7,6 +7,7 @@ import toast from 'react-hot-toast';
 const LoginPage = () => {
   const [form, setForm] = useState({ username: '', password: '' });
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -74,17 +75,35 @@ const LoginPage = () => {
 
           <div className="login-field">
             <label htmlFor="password">Password</label>
-            <div className="login-input-wrap">
+            <div className="login-input-wrap" style={{ position: 'relative' }}>
               <i className="bx bx-lock-alt" />
               <input
                 id="password"
-                type="password"
+                type={showPassword ? 'text' : 'password'}
                 name="password"
                 value={form.password}
                 onChange={handleChange}
                 placeholder="Enter your password"
                 autoComplete="current-password"
                 disabled={loading}
+                style={{ paddingRight: '44px' }}
+              />
+              <i 
+                className={`bx ${showPassword ? 'bx-hide' : 'bx-show'}`} 
+                onClick={() => setShowPassword(!showPassword)}
+                style={{
+                  position: 'absolute',
+                  right: '16px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  cursor: 'pointer',
+                  color: 'var(--text-muted)',
+                  fontSize: '1.2rem',
+                  padding: '8px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
               />
             </div>
           </div>

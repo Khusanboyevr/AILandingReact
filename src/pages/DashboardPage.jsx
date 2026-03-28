@@ -215,20 +215,19 @@ const DashboardPage = () => {
               const last = ms[ms.length - 1];
               return (
                 <div key={dev.id} className="devices-table-row">
-                  <span className="dev-name">
-                    <i className="bx bx-chip" />
-                    {dev.name || dev.device_name || `Device #${dev.id}`}
+                  <span className="dev-name" data-label="Device">
+                    <span style={{display: 'flex', alignItems: 'center', gap: '8px'}}><i className="bx bx-chip" /> {dev.name || dev.device_name || `Device #${dev.id}`}</span>
                   </span>
-                  <span className="dev-type">{dev.device_type || dev.type || 'N/A'}</span>
-                  <span>
+                  <span className="dev-type" data-label="Type">{dev.device_type || dev.type || 'N/A'}</span>
+                  <span data-label="Status">
                     <span className="status-badge" style={{ background: `${statusColor(dev)}20`, color: statusColor(dev) }}>
                       ● {dev.status || (dev.is_active ? 'Online' : 'Offline')}
                     </span>
                   </span>
-                  <span className="dev-measurement">
+                  <span className="dev-measurement" data-label="Measurement">
                     {last ? `${last.temperature}°C · ${last.humidity}%` : '—'}
                   </span>
-                  <span>
+                  <span data-label="Action">
                     <Link to={`/dashboard/devices/${dev.id}`} className="btn-sm primary" style={{ fontSize: '0.78rem' }}>
                       Details
                     </Link>
