@@ -1,0 +1,135 @@
+import { useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import { login } from '../api/authApi';
+import { setToken } from '../utils/auth';
+import toast from 'react-hot-toast';
+
+const LoginPage = () => {
+  const [form, setForm] = useState({ username: '', password: '' });
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+
+  const handleChange = (e) => {
+    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!form.username.trim() || !form.password.trim()) {
+      toast.error('Please enter username and password.');
+      return;
+    }
+
+    setLoading(true);
+    const result = await login(form.username, form.password);
+    setLoading(false);
+
+    if (result.success) {
+      const token = result.token;
+      if (token) {
+        setToken(token);
+        toast.success('Welcome back! Redirecting...');
+        setTimeout(() => navigate('/dashboard'), 800);
+      } else {
+        toast.error('Login succeeded but no token received.');
+      }
+    } else {
+      toast.error(result.message);
+    }
+  };
+
+
+  return (
+    <div className="login-page">
+      {/* Background orbs */}
+      <div className="glow-orb orb-1" style={{ opacity: 0.4 }} />
+      <div className="glow-orb orb-2" style={{ opacity: 0.25 }} />
+
+      <div className="login-card glass-card">
+        <div className="login-header">
+          <div className="login-logo">
+            <i className="bx bx-atom" />
+          </div>
+          <h1>Welcome Back</h1>
+          <p>Sign in to the AI Monitoring Dashboard</p>
+        </div>
+
+        <form className="login-form" onSubmit={handleSubmit} autoComplete="off">
+          <div className="login-field">
+            <label htmlFor="username">Username</label>
+            <div className="login-input-wrap">
+              <i className="bx bx-user" />
+              <input
+                id="username"
+                type="text"
+                name="username"
+                value={form.username}
+                onChange={handleChange}
+                placeholder="Enter your username"
+                autoComplete="username"
+                disabled={loading}
+              />
+            </div>
+          </div>
+
+          <div className="login-field">
+            <label htmlFor="password">Password</label>
+            <div className="login-input-wrap">
+              <i className="bx bx-lock-alt" />
+              <input
+                id="password"
+                type="password"
+                name="password"
+                value={form.password}
+                onChange={handleChange}
+                placeholder="Enter your password"
+                autoComplete="current-password"
+                disabled={loading}
+              />
+            </div>
+          </div>
+
+          <button
+            type="submit"
+            className="btn btn-primary login-submit"
+            disabled={loading}
+          >
+            {loading ? (
+              <><i className="bx bx-loader-alt bx-spin" /> Signing In...</>
+            ) : (
+              <><i className="bx bx-log-in" /> Sign In</>
+            )}
+          </button>
+
+          <div style={{ position: 'relative', textAlign: 'center', margin: '16px 0' }}>
+            <span style={{ background: 'var(--bg-dark)', padding: '0 10px', color: 'var(--text-muted)', fontSize: '0.85rem', position: 'relative', zIndex: 1 }}>Yokida</span>
+            <div style={{ position: 'absolute', top: '50%', left: 0, right: 0, height: '1px', background: 'var(--card-border)' }} />
+          </div>
+
+          <button
+            type="button"
+            className="btn btn-secondary login-submit"
+            onClick={() => {
+              setToken('DEMO_MODE');
+              toast.success('Hush kelibsiz! Demo rejimiga o\'tilmoqda...');
+              setTimeout(() => navigate('/dashboard'), 800);
+            }}
+            disabled={loading}
+            style={{ marginTop: 0 }}
+          >
+            <i className="bx bx-play-circle" /> Demo Rejimida Sinab Ko'rish
+          </button>
+        </form>
+
+        <div className="login-footer">
+          <Link to="/" className="login-back">
+            <i className="bx bx-arrow-back" /> Bosh sahifaga qaytish 
+          </Link>
+        </div>
+
+      </div>
+    </div>
+  );
+};
+
+export default LoginPage;
