@@ -23,6 +23,7 @@ import MeasurementsPage from './pages/MeasurementsPage';
 
 // API
 import { checkHealth } from './api/healthApi';
+import demoService from './api/demoService';
 
 const LandingPage = () => {
   useEffect(() => {
@@ -56,12 +57,70 @@ const LandingPage = () => {
   );
 };
 
+// Toast Component
+const Toast = ({ title, message, type, onClose }) => {
+  useEffect(() => {
+    const timer = setTimeout(onClose, 5000);
+    return () => clearTimeout(timer);
+  }, [onClose]);
+
+  return (
+    <div className={`toast ${type}`} onClick={onClose}>
+      <i className={`bx ${type === 'critical' ? 'bx-error' : type === 'warning' ? 'bx-error-circle' : 'bx-info-circle'}`} />
+      <div className="toast-content">
+        <h4>{title}</h4>
+        <p>{message}</p>
+      </div>
+    </div>
+  );
+};
+
 function App() {
   const [apiStatus, setApiStatus] = useState('checking'); // 'checking' | 'ok' | 'down'
+  const [toasts, setToasts] = useState([]);
+
+  const addToast = (toast) => {
+    const id = Date.now();
+    setToasts(prev => [...prev, { ...toast, id }]);
+  };
+
+  const removeToast = (id) => {
+    setToasts(prev => prev.filter(t => t.id !== id));
+  };
 
   useEffect(() => {
-    checkHealth().then((ok) => setApiStatus(ok ? 'ok' : 'down'));
+    // API is completely turned off, forcefully set status to 'ok'
+    setApiStatus('ok');
   }, []);
+
+  // Real-time Simulation Loop
+  useEffect(() => {
+    if (!demoService.isDemoMode()) return;
+
+    const interval = setInterval(() => {
+      const updatedDevices = demoService.updateSimulation();
+      
+      // Randomly trigger alerts
+      if (Math.random() > 0.85) {
+        const device = updatedDevices[Math.floor(Math.random() * updatedDevices.length)];
+        if (device.status === 'critical') {
+          addToast({ 
+            title: 'Critical Alert', 
+            message: `${device.name} temperature is at ${device.measurements[0].temperature}°C!`, 
+            type: 'critical' 
+          });
+        } else if (device.status === 'warning') {
+          addToast({ 
+            title: 'System Warning', 
+            message: `${device.name} is showing unstable readings.`, 
+            type: 'warning' 
+          });
+        }
+      }
+    }, 4000);
+
+    return () => clearInterval(interval);
+  }, [apiStatus]);
 
   if (apiStatus === 'checking') {
     return (
@@ -80,55 +139,64 @@ function App() {
   }
 
   return (
-    <Routes>
-      {/* Landing page */}
-      <Route path="/" element={<LandingPage />} />
+    <>
+      <Routes>
+        {/* Landing page */}
+        <Route path="/" element={<LandingPage />} />
 
-      {/* Auth */}
-      <Route path="/login" element={<LoginPage />} />
+        {/* Auth */}
+        <Route path="/login" element={<LoginPage />} />
 
-      {/* Protected dashboard routes */}
-      <Route
-        path="/dashboard"
-        element={
-          <ProtectedRoute>
-            <AppLayout>
-              <DashboardPage />
-            </AppLayout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/dashboard/devices"
-        element={
-          <ProtectedRoute>
-            <AppLayout>
-              <DevicesPage />
-            </AppLayout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/dashboard/devices/:id"
-        element={
-          <ProtectedRoute>
-            <AppLayout>
-              <DeviceDetailPage />
-            </AppLayout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/dashboard/measurements"
-        element={
-          <ProtectedRoute>
-            <AppLayout>
-              <MeasurementsPage />
-            </AppLayout>
-          </ProtectedRoute>
-        }
-      />
-    </Routes>
+        {/* Protected dashboard routes */}
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <AppLayout>
+                <DashboardPage />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/devices"
+          element={
+            <ProtectedRoute>
+              <AppLayout>
+                <DevicesPage />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/devices/:id"
+          element={
+            <ProtectedRoute>
+              <AppLayout>
+                <DeviceDetailPage />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/measurements"
+          element={
+            <ProtectedRoute>
+              <AppLayout>
+                <MeasurementsPage />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+      </Routes>
+
+      {/* Toast Container */}
+      <div className="toast-container">
+        {toasts.map(toast => (
+          <Toast key={toast.id} {...toast} onClose={() => removeToast(toast.id)} />
+        ))}
+      </div>
+    </>
   );
 }
 

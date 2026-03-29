@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { login } from '../api/authApi';
 import { setToken } from '../utils/auth';
 import toast from 'react-hot-toast';
+import demoService from '../api/demoService';
 
 const LoginPage = () => {
   const [form, setForm] = useState({ username: '', password: '' });
@@ -22,9 +23,12 @@ const LoginPage = () => {
     }
 
     setLoading(true);
+    
+    // Explicitly turn OFF demo mode for real login attempt
+    demoService.toggleDemoMode(false);
+    
     const result = await login(form.username, form.password);
-    setLoading(false);
-
+    
     if (result.success) {
       const token = result.token;
       if (token) {
@@ -35,8 +39,10 @@ const LoginPage = () => {
         toast.error('Login succeeded but no token received.');
       }
     } else {
+      // If login failed, we might want to stay in live mode or show error
       toast.error(result.message);
     }
+    setLoading(false);
   };
 
 
@@ -108,6 +114,15 @@ const LoginPage = () => {
             </div>
           </div>
 
+          <div className="login-options" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 20 }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.85rem', color: 'var(--text-muted)', cursor: 'pointer' }}>
+              <input type="checkbox" style={{ accentColor: 'var(--primary)' }} /> Remember me
+            </label>
+            <a href="#" className="forgot-link" style={{ fontSize: '0.85rem', color: 'var(--primary)', textDecoration: 'none' }}>
+              Forgot password?
+            </a>
+          </div>
+
           <button
             type="submit"
             className="btn btn-primary login-submit"
@@ -120,23 +135,24 @@ const LoginPage = () => {
             )}
           </button>
 
-          <div style={{ position: 'relative', textAlign: 'center', margin: '16px 0' }}>
-            <span style={{ background: 'var(--bg-dark)', padding: '0 10px', color: 'var(--text-muted)', fontSize: '0.85rem', position: 'relative', zIndex: 1 }}>Yokida</span>
+          <div style={{ position: 'relative', textAlign: 'center', margin: '20px 0' }}>
+            <span style={{ background: 'var(--bg-dark)', padding: '0 12px', color: 'var(--text-muted)', fontSize: '0.8rem', position: 'relative', zIndex: 1, textTransform: 'uppercase', letterSpacing: '1px' }}>Or</span>
             <div style={{ position: 'absolute', top: '50%', left: 0, right: 0, height: '1px', background: 'var(--card-border)' }} />
           </div>
 
           <button
             type="button"
-            className="btn btn-secondary login-submit"
+            className="btn btn-secondary login-submit demo-btn-login"
             onClick={() => {
+              demoService.toggleDemoMode(true);
               setToken('DEMO_MODE');
-              toast.success('Hush kelibsiz! Demo rejimiga o\'tilmoqda...');
+              toast.success('Xush kelibsiz! Demo rejimiga o\'tilmoqda...');
               setTimeout(() => navigate('/dashboard'), 800);
             }}
             disabled={loading}
-            style={{ marginTop: 0 }}
+            style={{ marginTop: 0, background: 'transparent', border: '1px solid var(--card-border)' }}
           >
-            <i className="bx bx-play-circle" /> Demo Rejimida Sinab Ko'rish
+            <i className="bx bx-play-circle" /> Try Demo Mode
           </button>
         </form>
 

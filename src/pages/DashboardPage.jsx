@@ -17,6 +17,7 @@ import { getDashboard } from '../api/dashboardApi';
 import LoadingSkeleton from '../components/LoadingSkeleton';
 import EmptyState from '../components/EmptyState';
 import toast from 'react-hot-toast';
+import demoService from '../api/demoService';
 
 ChartJS.register(
   CategoryScale, LinearScale, PointElement, LineElement,
@@ -46,7 +47,15 @@ const DashboardPage = () => {
   useEffect(() => {
     fetchData();
     intervalRef.current = setInterval(() => fetchData(), REFRESH_INTERVAL);
-    return () => clearInterval(intervalRef.current);
+    
+    // Immediate update listener for Demo Mode
+    const handleUpdate = () => fetchData();
+    window.addEventListener('demo-update', handleUpdate);
+    
+    return () => {
+      clearInterval(intervalRef.current);
+      window.removeEventListener('demo-update', handleUpdate);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -54,7 +63,7 @@ const DashboardPage = () => {
   const devices = data?.devices || data?.results || [];
   const totalDevices = devices.length;
   const onlineDevices = devices.filter(
-    (d) => d.status === 'online' || d.is_active === true || d.status === 'active'
+    (d) => d.is_online === true || d.status === 'online' || d.is_active === true || d.status === 'active'
   ).length;
 
   const measurements = devices.flatMap(
@@ -132,14 +141,40 @@ const DashboardPage = () => {
       <div className="page-header">
         <div>
           <h1 className="page-title">Dashboard Overview</h1>
-          <p className="page-sub">
-            Real-time AI predictive analysis · Auto-refreshes every {REFRESH_INTERVAL / 1000}s
-            {lastUpdated && (
-              <span className="last-updated">
-                {' '}· Last updated: {lastUpdated.toLocaleTimeString()}
-              </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 4 }}>
+            <p className="page-sub">
+              Real-time AI predictive analysis · Auto-refreshes every {REFRESH_INTERVAL / 1000}s
+            </p>
+            {demoService.isDemoMode() && (
+              <div className="demo-badge" style={{ fontSize: '0.65rem' }}>
+                <i className="bx bx-bot" /> AI ACTIVE
+              </div>
             )}
-          </p>
+          </div>
+          
+          {demoService.isDemoMode() && (
+            <div className="glass-card" style={{ 
+              marginTop: 16, 
+              padding: '12px 20px', 
+              borderLeft: '4px solid #8b5cf6',
+              background: 'rgba(139, 92, 246, 0.05)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 16
+            }}>
+              <i className="bx bx-brain" style={{ fontSize: '1.5rem', color: '#8b5cf6' }} />
+              <div>
+                <span style={{ fontSize: '0.8rem', color: '#94a3b8', display: 'block' }}>Predictive Insight (98% confidence)</span>
+                <span style={{ fontSize: '0.95rem', fontWeight: 600 }}>
+                  {devices.some(d => d.status === 'critical') 
+                    ? "⚠ Critical anomaly detected in drying system. Immediate action recommended." 
+                    : devices.some(d => d.status === 'warning')
+                    ? "⚠ Risk increasing in next 2 hours. Monitor thermostat stability."
+                    : "✔ All systems stable. No anomalies predicted in next 12 hours."}
+                </span>
+              </div>
+            </div>
+          )}
         </div>
         <button
           className="btn btn-primary"

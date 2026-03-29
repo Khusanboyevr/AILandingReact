@@ -53,14 +53,15 @@ const DevicesPage = () => {
   };
 
   const statusColor = (device) => {
-    const s = device.status || (device.is_active ? 'online' : 'offline');
+    const s = device.status || (device.is_online ? 'online' : (device.is_active ? 'online' : 'offline'));
     if (s === 'online' || s === 'active') return '#10b981';
     if (s === 'warning') return '#f59e0b';
     return '#ef4444';
   };
 
   const statusLabel = (device) => {
-    if (device.status) return device.status;
+    if (device.status) return device.status.charAt(0).toUpperCase() + device.status.slice(1);
+    if (device.is_online) return 'Online';
     return device.is_active ? 'Online' : 'Offline';
   };
 
@@ -92,12 +93,36 @@ const DevicesPage = () => {
                 <div className="device-icon">
                   <i className={`bx ${dev.device_type === 'thermostat' ? 'bx-thermometer' : 'bxs-hot'}`} />
                 </div>
-                <span
-                  className="status-badge"
-                  style={{ background: `${statusColor(dev)}18`, color: statusColor(dev) }}
-                >
-                  ● {statusLabel(dev)}
-                </span>
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  <span
+                    className="status-badge"
+                    style={{ background: `${statusColor(dev)}18`, color: statusColor(dev) }}
+                  >
+                    ● {statusLabel(dev)}
+                  </span>
+                  <button 
+                    onClick={async (e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      if (!window.confirm("Buni o'chirishga ishonchingiz komilmi?")) return;
+                      const { deleteDevice } = await import('../api/devicesApi');
+                      const toastId = toast.loading("O'chirilmoqda...");
+                      const res = await deleteDevice(dev.id);
+                      toast.dismiss(toastId);
+                      if (res.success) {
+                        toast.success("Muvaffaqiyatli o'chirildi!");
+                        fetchDevices();
+                      } else {
+                        toast.error(res.message);
+                      }
+                    }} 
+                    className="btn btn-sm" 
+                    style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', padding: '6px' }} 
+                    title="O'chirish"
+                  >
+                    <i className="bx bx-trash" />
+                  </button>
+                </div>
               </div>
               <h3 className="device-card-name">{dev.name || dev.device_name || `Device #${dev.id}`}</h3>
               <p className="device-card-type">{dev.device_type || dev.type || 'Unknown Type'}</p>

@@ -3,9 +3,6 @@ import { getToken } from '../utils/auth';
 import { mockDevices } from './mockData';
 
 export const getDevices = async () => {
-  if (getToken() === 'DEMO_MODE') {
-    return { success: true, data: mockDevices };
-  }
   try {
     const response = await apiClient.get('/api/v1/devices/');
     return { success: true, data: response.data };
@@ -16,19 +13,6 @@ export const getDevices = async () => {
 };
 
 export const createDevice = async (deviceData) => {
-  if (getToken() === 'DEMO_MODE') {
-    const newDevice = {
-      id: Date.now(),
-      ...deviceData,
-      name: deviceData.device_name,
-      status: 'online',
-      is_active: true,
-      measurements: []
-    };
-    mockDevices.push(newDevice);
-    return { success: true, data: newDevice };
-  }
-
   try {
     // Map frontend fields to Swagger backend fields
     // Backend expects: { name, serial_number, device_type }
@@ -51,6 +35,18 @@ export const createDevice = async (deviceData) => {
       message = data.detail || 
                 (typeof data === 'object' ? JSON.stringify(data) : data);
     }
+    return { success: false, message };
+  }
+};
+
+export const deleteDevice = async (id) => {
+  try {
+    const response = await apiClient.delete(`/api/v1/devices/${id}/`);
+    // Need to trigger a global update so UI syncs
+    window.dispatchEvent(new Event('demo-update'));
+    return { success: true, data: response.data };
+  } catch (error) {
+    const message = error.response?.data?.detail || 'Failed to delete device.';
     return { success: false, message };
   }
 };

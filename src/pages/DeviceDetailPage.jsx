@@ -19,16 +19,24 @@ const DeviceDetailPage = () => {
 
   useEffect(() => {
     const fetchDetail = async () => {
-      setLoading(true);
       const result = await getDeviceDashboard(id);
       if (result.success) {
         setData(result.data);
-      } else {
-        toast.error(result.message);
       }
       setLoading(false);
     };
+    
     fetchDetail();
+    const interval = setInterval(fetchDetail, 5000);
+    
+    // Immediate update listener for Demo Mode
+    const handleUpdate = () => fetchDetail();
+    window.addEventListener('demo-update', handleUpdate);
+    
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('demo-update', handleUpdate);
+    };
   }, [id]);
 
   const measurements = data?.measurements || data?.latest_measurements || [];
@@ -82,6 +90,29 @@ const DeviceDetailPage = () => {
           </h1>
           <p className="page-sub">Detailed analytics and measurement history</p>
         </div>
+        {!loading && data && (
+          <button 
+            onClick={async () => {
+              if (!window.confirm("Buni o'chirishga ishonchingiz komilmi?")) return;
+              const { deleteDevice } = await import('../api/devicesApi');
+              const toast = await import('react-hot-toast').then(m => m.default);
+              const toastId = toast.loading("O'chirilmoqda...");
+              const res = await deleteDevice(id);
+              toast.dismiss(toastId);
+              if (res.success) {
+                toast.success("Muvaffaqiyatli o'chirildi!");
+                window.location.href = '/dashboard/devices';
+              } else {
+                toast.error(res.message);
+              }
+            }}
+            className="btn btn-secondary" 
+            style={{ color: '#ef4444', borderColor: 'rgba(239,68,68,0.2)' }}
+          >
+            <i className="bx bx-trash" /> 
+            <span>O'chirish</span>
+          </button>
+        )}
       </div>
 
       {loading ? (
