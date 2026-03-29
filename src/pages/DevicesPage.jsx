@@ -10,7 +10,7 @@ const DevicesPage = () => {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [creating, setCreating] = useState(false);
-  const [form, setForm] = useState({ device_name: '', device_type: '', location: '' });
+  const [form, setForm] = useState({ device_name: '', device_type: 'thermostat', location: '', serial_number: '' });
 
   const fetchDevices = async () => {
     setLoading(true);
@@ -35,13 +35,17 @@ const DevicesPage = () => {
       toast.error('Device name is required.');
       return;
     }
+    if (!form.serial_number.trim()) {
+      toast.error('Serial number is required.');
+      return;
+    }
     setCreating(true);
     const result = await createDevice(form);
     setCreating(false);
     if (result.success) {
       toast.success('Device created successfully!');
       setShowModal(false);
-      setForm({ device_name: '', device_type: '', location: '' });
+      setForm({ device_name: '', device_type: 'thermostat', location: '', serial_number: '' });
       fetchDevices();
     } else {
       toast.error(result.message);
@@ -142,11 +146,26 @@ const DevicesPage = () => {
               </div>
 
               <div className="form-field">
+                <label>Serial Number *</label>
+                <div className="form-input-wrap">
+                  <i className="bx bx-barcode" />
+                  <input
+                    type="text"
+                    name="serial_number"
+                    value={form.serial_number}
+                    onChange={handleChange}
+                    placeholder="e.g. SN-00123"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="form-field">
                 <label>Device Type</label>
                 <div className="form-input-wrap">
                   <i className="bx bx-category" />
-                  <select name="device_type" value={form.device_type} onChange={handleChange}>
-                    <option value="">Select type...</option>
+                  <select name="device_type" value={form.device_type} onChange={handleChange} required>
+                    <option value="" disabled>Select type...</option>
                     <option value="thermostat">Thermostat</option>
                     <option value="drying_cabinet">Drying Cabinet</option>
                     <option value="sensor">Sensor</option>

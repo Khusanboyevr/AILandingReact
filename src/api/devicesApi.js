@@ -17,7 +17,16 @@ export const getDevices = async () => {
 
 export const createDevice = async (deviceData) => {
   if (getToken() === 'DEMO_MODE') {
-    return { success: true, data: { id: Date.now(), ...deviceData, status: 'online' } };
+    const newDevice = {
+      id: Date.now(),
+      ...deviceData,
+      name: deviceData.device_name,
+      status: 'online',
+      is_active: true,
+      measurements: []
+    };
+    mockDevices.push(newDevice);
+    return { success: true, data: newDevice };
   }
   try {
     const response = await apiClient.post('/api/v1/devices/', deviceData);
