@@ -2,6 +2,7 @@ export const mockDevices = [
   {
     id: 1,
     name: "Termostat TC-120",
+    device_name: "Termostat TC-120",
     device_type: "thermostat",
     status: "online",
     is_active: true,
@@ -13,6 +14,7 @@ export const mockDevices = [
   {
     id: 2,
     name: "Quritish Shkafi SH-3",
+    device_name: "Quritish Shkafi SH-3",
     device_type: "oven",
     status: "warning",
     is_active: true,
@@ -24,6 +26,7 @@ export const mockDevices = [
   {
     id: 3,
     name: "Sovutgich S-80",
+    device_name: "Sovutgich S-80",
     device_type: "thermostat",
     status: "online",
     is_active: true,

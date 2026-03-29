@@ -10,7 +10,7 @@ const DevicesPage = () => {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [creating, setCreating] = useState(false);
-  const [form, setForm] = useState({ name: '', device_type: '', location: '' });
+  const [form, setForm] = useState({ device_name: '', device_type: '', location: '' });
 
   const fetchDevices = async () => {
     setLoading(true);
@@ -31,7 +31,7 @@ const DevicesPage = () => {
 
   const handleCreate = async (e) => {
     e.preventDefault();
-    if (!form.name.trim()) {
+    if (!form.device_name.trim()) {
       toast.error('Device name is required.');
       return;
     }
@@ -41,7 +41,7 @@ const DevicesPage = () => {
     if (result.success) {
       toast.success('Device created successfully!');
       setShowModal(false);
-      setForm({ name: '', device_type: '', location: '' });
+      setForm({ device_name: '', device_type: '', location: '' });
       fetchDevices();
     } else {
       toast.error(result.message);
@@ -132,8 +132,8 @@ const DevicesPage = () => {
                   <i className="bx bx-rename" />
                   <input
                     type="text"
-                    name="name"
-                    value={form.name}
+                    name="device_name"
+                    value={form.device_name}
                     onChange={handleChange}
                     placeholder="e.g. Thermostat TC-120"
                     required
