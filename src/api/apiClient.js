@@ -13,16 +13,37 @@ apiClient.interceptors.request.use((config) => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+  
+  // Debug log request
+  console.log(`🚀 API Request: [${config.method.toUpperCase()}] ${config.url}`, config.data || '');
+  
   return config;
+}, (error) => {
+  console.error('❌ Request Error:', error);
+  return Promise.reject(error);
 });
 
-// Handle 401 → redirect to login
+// Handle responses and errors
 apiClient.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // Debug log success
+    console.log(`✅ API Response: [${response.config.method.toUpperCase()}] ${response.config.url}`, response.data);
+    return response;
+  },
   (error) => {
+    // Debug log error
+    console.error(`❌ API Error: [${error.config?.method?.toUpperCase() || 'UNKNOWN'}] ${error.config?.url || 'UNKNOWN'}`, {
+      status: error.response?.status,
+      data: error.response?.data,
+      message: error.message
+    });
+
     if (error.response?.status === 401) {
       localStorage.removeItem('auth_token');
-      window.location.href = '/login';
+      // Only redirect if not already on login page to avoid loops
+      if (!window.location.pathname.includes('/login')) {
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(error);
   }
