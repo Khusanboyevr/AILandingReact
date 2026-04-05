@@ -24,11 +24,6 @@ const Navbar = () => {
             <i className='bx bx-brain' />
             <span>DeepAnalytics</span>
           </a>
-          {isDemo && (
-            <div className="demo-badge">
-              <i className="bx bx-vial" /> DEMO MODE
-            </div>
-          )}
         </div>
         
         <nav className={`nav-links ${menuOpen ? 'open' : ''}`}>

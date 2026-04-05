@@ -4,7 +4,7 @@ import { mockDevices } from './mockData';
 
 export const getDevices = async () => {
   try {
-    const response = await apiClient.get('/api/v1/devices/');
+    const response = await apiClient.get('devices/');
     return { success: true, data: response.data };
   } catch (error) {
     const message = error.response?.data?.detail || 'Failed to fetch devices.';
@@ -25,7 +25,7 @@ export const createDevice = async (deviceData) => {
 
     console.log('📤 Creating device with payload:', payload);
 
-    const response = await apiClient.post('/api/v1/devices/', payload);
+    const response = await apiClient.post('devices/', payload);
     return { success: true, data: response.data };
   } catch (error) {
     let message = 'Failed to create device.';
@@ -41,7 +41,7 @@ export const createDevice = async (deviceData) => {
 
 export const deleteDevice = async (id) => {
   try {
-    const response = await apiClient.delete(`/api/v1/devices/${id}/`);
+    const response = await apiClient.delete(`devices/${id}/`);
     // Need to trigger a global update so UI syncs
     window.dispatchEvent(new Event('demo-update'));
     return { success: true, data: response.data };

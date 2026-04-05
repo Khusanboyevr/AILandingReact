@@ -1,70 +1,16 @@
 import * as math from 'mathjs';
 
-// =====================================================
-// GOOGLE GEMINI API (gemini-1.5-flash) — FREE TIER
-// Get your free key at: https://aistudio.google.com/apikey
-// =====================================================
-const GEMINI_API_KEY = 'AIzaSyB_omi4biHxLsFdOLfPQ-y5aT4JYgVkXh4';
-
-const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
-
-// Structured prompt — step by step + Uzbek
-const buildPrompt = (formula, localResult) => {
-  let prompt = `Quyidagi matematik formulani yoki masalani o'zbek tilida qadamma-qadam yeching va tushuntiring:\n\n"${formula}"\n\n`;
-
-  if (localResult !== null) {
-    prompt += `MathJS hisob-kitobi bo'yicha natija: ${localResult}\n\n`;
-  }
-
-  prompt += `Javobni quyidagi formatda JSON shaklida qaytar (faqat JSON, boshqa matn yo'q):
-{
-  "steps": [
-    "1-qadam: ...",
-    "2-qadam: ...",
-    "3-qadam: ..."
-  ],
-  "result": "Yakuniy natija: ...",
-  "explanation": "Qisqacha tushuntirish...",
-  "tip": "Maslahat yoki qo'shimcha ma'lumot (ixtiyoriy)"
-}`;
-
-  return prompt;
-};
-
 // Format the AI response for the UI
-const formatAIResponse = (json, formula, localResult) => {
-  try {
-    const data = typeof json === 'string' ? JSON.parse(json) : json;
-    const lines = [];
-
-    lines.push(`📐 **Formula:** \`${formula}\``);
+const formatAIResponse = (text, formula, localResult) => {
+  const lines = [];
+  lines.push(`📐 **Formula:** \`${formula}\``);
+  lines.push('');
+  if (localResult !== null) {
+    lines.push(`**✅ Natija:** ${localResult}`);
     lines.push('');
-
-    if (data.steps && data.steps.length > 0) {
-      lines.push('**🔢 Yechish jarayoni:**');
-      data.steps.forEach(step => lines.push(`• ${step}`));
-      lines.push('');
-    }
-
-    if (data.result) {
-      lines.push(`**✅ ${data.result}**`);
-      lines.push('');
-    }
-
-    if (data.explanation) {
-      lines.push(`**💡 Izoh:** ${data.explanation}`);
-    }
-
-    if (data.tip) {
-      lines.push('');
-      lines.push(`**📌 Maslahat:** ${data.tip}`);
-    }
-
-    return lines.join('\n');
-  } catch {
-    // If JSON parsing fails, return raw text
-    return typeof json === 'string' ? json : JSON.stringify(json);
   }
+  lines.push(`**💡 AI Yechimi / Tushuntirish:**\n${text}`);
+  return lines.join('\n');
 };
 
 export const createMeasurement = async (data) => {
@@ -86,44 +32,50 @@ export const createMeasurement = async (data) => {
       // Not pure math — AI will handle it
     }
 
-    // === GOOGLE GEMINI AI ===
-    if (GEMINI_API_KEY && GEMINI_API_KEY !== 'YOUR_GEMINI_API_KEY') {
-      try {
-        const response = await fetch(GEMINI_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{
-              parts: [{ text: buildPrompt(formulaText, localResult) }]
-            }]
-          })
-        });
+    // === GOOGLE GEMINI AI INTEGRATION ===
+    let aiErrorMsg = null;
+    try {
+      const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+      
+      if (!apiKey || apiKey === 'YOUR_API_KEY_HERE') {
+        throw new Error("API_KEY_MISSING");
+      }
 
-        if (response.ok) {
-          const json = await response.json();
-          const rawText = json?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      const { GoogleGenerativeAI } = await import('@google/generative-ai');
+      const genAI = new GoogleGenerativeAI(apiKey);
+      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-          // Try to extract JSON from code block if wrapped
-          const jsonMatch = rawText.match(/```(?:json)?\s*([\s\S]*?)```/) || [null, rawText];
-          const cleanJson = jsonMatch[1].trim();
+      const pollPrompt = `Sen malakali matematika va AI yordamchisisan. 
+Foydalanuvchi quyidagi matematik muammoni/formulani yubordi: "${formulaText}".
+Agar bu kvadrat ifoda maksimumi / minimumi bo'lsa (masalan: y = -x^2 + 4x + 1), uning hosilasi yoki parabola uchi formulasi (-b/2a) orqali yechib, x va y ning qiymatlarini aniq ko'rsat.
+Istalgan misolni qadamma-qadam, aniq va tushunarli o'zbek tilida yechib ber.
+Sening vazifang nafaqat hisoblash, balki muammoni yechish uslubini tushuntirishdir.
+${localResult !== null ? `Mening dastlabki hisobim bo'yicha natija: ${localResult} chiqdi. Buni tekshirib to'g'ri bo'lsa tasdiqla.` : ''}
+Iltimos aniq qilib javobingni yoz.`;
 
-          const advice = formatAIResponse(cleanJson, formulaText, localResult);
-
-          return {
-            success: true,
-            data: {
-              prediction: {
-                advice,
-                status: 'online',
-                status_label: 'Muvaffaqiyatli',
-                recommendation: localResult !== null ? `Tez natija: ${localResult}` : 'AI tahlil yakunlandi.',
-                gemini_response: '[Google Gemini 1.5 Flash ✅]'
-              }
-            }
-          };
+      const result = await model.generateContent(pollPrompt);
+      const response = await result.response;
+      const pText = response.text();
+      
+      return {
+        success: true,
+        data: {
+          prediction: {
+             advice: formatAIResponse(pText, formulaText, localResult),
+             status: 'online',
+             status_label: 'Muvaffaqiyatli',
+             recommendation: localResult !== null ? `Natija: ${localResult}` : 'AI tahlili yakunlandi',
+             gemini_response: '[Google Gemini AI ✅]'
+          }
         }
-      } catch (geminiErr) {
-        console.warn('Gemini API xatosi, fallbackga o\'tilmoqda:', geminiErr.message);
+      };
+
+    } catch (e) {
+      console.warn("AI xatosi: ", e);
+      if (e.message === "API_KEY_MISSING") {
+        aiErrorMsg = "Gemini API kaliti topilmadi. Iltimos .env faylida VITE_GEMINI_API_KEY kiriting.";
+      } else {
+        aiErrorMsg = "AI serveriga ulanishda xatolik: " + e.message;
       }
     }
 
@@ -134,7 +86,8 @@ export const createMeasurement = async (data) => {
         '',
         `✅ **Natija: ${localResult}**`,
         '',
-        `⚡ *MathJS v${math.version} bilan hisoblandi (oflayn)*`
+        `⚡ *Faqat MathJS (offline) orqali hisoblandi, chunki AI tarmoqqa ulanmadi yoki xatolik yuz berdi.*`,
+        aiErrorMsg ? `(❗ Xatolik: ${aiErrorMsg})` : ''
       ];
       return {
         success: true,
@@ -150,9 +103,10 @@ export const createMeasurement = async (data) => {
       };
     }
 
+    // Agar hech qaysi o'xshamasa:
     return {
       success: false,
-      message: 'Formula hisoblashda xato yuz berdi. Formulani tekshirib qayta kiriting.',
+      message: aiErrorMsg || 'Formulani hisoblash uchun AI ulanishi amalga oshmadi. Iltimos formulani to\'g\'ri formatda yozing.',
       fieldErrors: {}
     };
 

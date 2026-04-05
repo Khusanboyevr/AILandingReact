@@ -1,12 +1,14 @@
 import axios from 'axios';
 import demoService from './demoService';
 
-const BASE_URL = import.meta.env.MODE === 'development' ? '' : 'https://dastur-aw8r.onrender.com';
+const BASE_URL = 'https://dastur-aw8r.onrender.com/api/v1/';
 
 const apiClient = axios.create({
   baseURL: BASE_URL,
   headers: { 'Content-Type': 'application/json' },
 });
+
+export const analyze = (data) => apiClient.post("analyze/", data);
 
 // Interceptor to handle Demo Mode
 apiClient.interceptors.request.use(async (config) => {
@@ -19,43 +21,48 @@ apiClient.interceptors.request.use(async (config) => {
     let mockResponse = null;
 
     try {
-      if (url.includes('/auth/login')) {
+      const cleanUrl = url.startsWith('/') ? url : '/' + url;
+      
+      if (cleanUrl.includes('auth/login')) {
         mockResponse = await demoService.login(config.data);
-      } else if (url.includes('/devices/')) {
-        const parts = url.split('/').filter(Boolean);
+      } else if (cleanUrl.includes('devices/')) {
+        const parts = cleanUrl.split('/').filter(Boolean);
         const lastPart = parts[parts.length - 1];
         
-        // If the last part is a number, it's a detail endpoint
         if (!isNaN(parseInt(lastPart)) && lastPart !== 'devices') {
           const id = lastPart;
           if (config.method === 'get') mockResponse = await demoService.getDevice(id);
           else if (config.method === 'put' || config.method === 'patch') mockResponse = await demoService.updateDevice(id, config.data);
           else if (config.method === 'delete') mockResponse = await demoService.deleteDevice(id);
         } else {
-          // It's the list endpoint with a trailing slash
           if (config.method === 'get') mockResponse = await demoService.getDevices();
           else if (config.method === 'post') mockResponse = await demoService.addDevice(config.data);
         }
-      } else if (url.includes('/devices')) {
+      } else if (cleanUrl.includes('devices')) {
         if (config.method === 'get') mockResponse = await demoService.getDevices();
         else if (config.method === 'post') mockResponse = await demoService.addDevice(config.data);
-      } else if (url.includes('/dashboard/create') || url.includes('/predict') || (url.includes('/measurements') && config.method === 'post')) {
+      } else if (cleanUrl.includes('dashboard/create') || cleanUrl.includes('predict') || (cleanUrl.includes('measurements') && config.method === 'post')) {
           mockResponse = await demoService.addMeasurement(config.data);
-      } else if (url.includes('/dashboard')) {
-        const parts = url.split('/').filter(Boolean);
+      } else if (cleanUrl.includes('dashboard')) {
+        const parts = cleanUrl.split('/').filter(Boolean);
         const lastPart = parts[parts.length - 1];
         if (!isNaN(parseInt(lastPart))) {
           mockResponse = await demoService.getDeviceDashboard(lastPart);
         } else {
           mockResponse = await demoService.getDashboard();
         }
-      } else if (url.includes('/measurements')) {
-        const params = new URLSearchParams(url.split('?')[1]);
+      } else if (cleanUrl.includes('measurements')) {
+        const params = new URLSearchParams(cleanUrl.split('?')[1]);
         const deviceId = params.get('device_id');
         mockResponse = await demoService.getMeasurements(deviceId);
-      } else if (url === '/' || url === '' || url.includes('/health')) {
-        // Health check
+      } else if (cleanUrl.includes('health')) {
         mockResponse = { status: 'ok' };
+      }
+
+      // If in demo mode and it's not analyze, we MUST intercept.
+      // If we didn't find a specific mockResponse, return an empty one instead of hitting real backend.
+      if (mockResponse === null) {
+        mockResponse = { success: true, message: 'Mock fallback', data: [] };
       }
 
       if (mockResponse !== null) {

@@ -146,14 +146,9 @@ const DashboardPage = () => {
             <p className="page-sub">
               Real-time AI predictive analysis · Auto-refreshes every {REFRESH_INTERVAL / 1000}s
             </p>
-            {demoService.isDemoMode() && (
-              <div className="demo-badge" style={{ fontSize: '0.65rem' }}>
-                <i className="bx bx-bot" /> AI ACTIVE
-              </div>
-            )}
           </div>
           
-          {(data?.advice || data?.overall_status || demoService.isDemoMode()) && (
+          {(data?.advice || data?.overall_status) && (
             <div className="glass-card" style={{ 
               marginTop: 16, 
               padding: '12px 20px', 

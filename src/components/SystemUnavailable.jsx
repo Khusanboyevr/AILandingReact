@@ -22,10 +22,6 @@ const SystemUnavailable = () => {
           <button className="btn btn-primary" onClick={() => window.location.reload()}>
             <i className="bx bx-refresh" /> Retry Connection
           </button>
-          
-          <button className="btn btn-secondary" onClick={handleDemoMode} style={{ borderColor: '#f59e0b', color: '#f59e0b' }}>
-            <i className="bx bx-play-circle" /> Enter Demo Mode
-          </button>
         </div>
 
         <div className="sys-status" style={{ marginTop: 32 }}>

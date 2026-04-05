@@ -24,9 +24,6 @@ const LoginPage = () => {
 
     setLoading(true);
     
-    // Explicitly turn OFF demo mode for real login attempt
-    demoService.toggleDemoMode(false);
-    
     const result = await login(form.username, form.password);
     
     if (result.success) {

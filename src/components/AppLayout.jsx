@@ -30,7 +30,6 @@ const AppLayout = ({ children }) => {
         <div className="app-sidebar-logo mobile-logo">
           <i className="bx bx-atom" />
           <span>DGU <span className="gradient-text">AI</span></span>
-          {isDemo && <span className="demo-badge" style={{ marginLeft: 8, fontSize: '0.6rem', padding: '2px 8px' }}>Demo</span>}
         </div>
         <button className="mobile-menu-btn" onClick={() => setIsSidebarOpen(true)}>
           <i className="bx bx-menu" />
@@ -68,26 +67,14 @@ const AppLayout = ({ children }) => {
         </nav>
 
         <div className="app-sidebar-footer">
-          {isDemo ? (
-            <div className="demo-toggle-container" style={{ border: 'none', padding: '0 12px 12px' }}>
-              <div className="demo-badge" style={{ marginBottom: 12, justifyContent: 'center' }}>
-                <i className="bx bx-test-tube" /> Demo Mode Active
-              </div>
-              <button 
-                className="btn btn-sm" 
-                style={{ width: '100%', fontSize: '0.75rem', background: 'rgba(255,255,255,0.05)' }}
-                onClick={() => toggleDemo(false)}
-              >
-                Switch to Live Mode
-              </button>
-            </div>
-          ) : (
+          {!isDemo && (
             <div className="app-nav-item status-ok">
               <i className="bx bx-wifi" />
               <span>API Online</span>
               <span className="status-dot online" />
             </div>
           )}
+
           
           <button className="app-nav-item logout-btn" onClick={handleLogout}>
             <i className="bx bx-log-out" />

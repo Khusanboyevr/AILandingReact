@@ -226,6 +226,29 @@ const demoService = {
     const devices = JSON.parse(localStorage.getItem(DEVICES_KEY));
     const device = devices.find(d => d.id === parseInt(id));
     return device;
+  },
+
+  submitCalibration: async (data) => {
+    await new Promise(r => setTimeout(r, 1200)); // Simulate backend processing delay
+    
+    // Simulate backend verification
+    const { indication_temperatures, chamber_temperatures } = data;
+    if (!indication_temperatures || !chamber_temperatures) {
+      throw new Error("Missing required temperature arrays");
+    }
+
+    console.log("📨 Backend qabul qildi:", data);
+
+    // Simulated Response
+    return {
+      success: true,
+      message: "Kalibrlash ma'lumotlari backend tomonidan muvaffaqiyatli saqlandi va hisoblandi.",
+      backend_calculated: {
+        timestamp: new Date().toISOString(),
+        received_measurements_count: indication_temperatures.length,
+        status: "APPROVED"
+      }
+    };
   }
 };
 

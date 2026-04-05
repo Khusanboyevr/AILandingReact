@@ -1,4 +1,5 @@
 import apiClient from './apiClient';
+import demoService from './demoService';
 
 /**
  * Login using the DGU 53519 API.
@@ -8,31 +9,19 @@ import apiClient from './apiClient';
  * We try /auth/login/ first (as specified in requirements), fallback to /auth/token/.
  */
 export const login = async (username, password) => {
+  // Always use Demo Mode logic first as per user request to avoid CORS blockers
+  const demoResult = await demoService.login({ username, password });
+  if (demoResult && !demoResult.error) {
+    return { success: true, token: 'DEMO_TOKEN_' + Date.now(), data: demoResult };
+  }
+
   try {
-    const response = await apiClient.post('/api/v1/auth/login/', { username, password });
-    
-    // As per Swagger, the response contains 'access', 'refresh', and 'token'
-    const token = response.data?.access || response.data?.token;
-    
-    if (token) {
-      return { success: true, data: response.data, token };
-    }
-    
-    return { success: false, message: 'Login succeeded but no token received.' };
+    // Keep real API logic for those who specifically need it, but it's secondary now
+    const response = await apiClient.post('auth/login/', { username, password });
+    const token = response.data?.access || response.data?.token || response.data?.access_token || response.data?.data?.token;
+    if (token) return { success: true, data: response.data, token };
+    return { success: false, message: 'Token topilmadi.' };
   } catch (err) {
-    // Extract error message from API response
-    let message = 'Login failed. Please check your credentials.';
-    
-    if (err.response?.data) {
-      const data = err.response.data;
-      message = data.detail || 
-                data.non_field_errors?.[0] || 
-                data.message || 
-                (typeof data === 'string' ? data : JSON.stringify(data));
-    } else if (err.request) {
-      message = 'Could not connect to the server. Please check your internet connection.';
-    }
-    
-    return { success: false, message };
+    return { success: false, message: 'Backend ulanishda xatolik (CORS yoki Server). Demo rejimidan foydalaning.' };
   }
 };
