@@ -16,9 +16,8 @@ import SystemUnavailable from './components/SystemUnavailable';
 
 // Pages
 import LoginPage from './pages/LoginPage';
+import SignUpPage from './pages/SignUpPage';
 import DashboardPage from './pages/DashboardPage';
-import DevicesPage from './pages/DevicesPage';
-import DeviceDetailPage from './pages/DeviceDetailPage';
 import MeasurementsPage from './pages/MeasurementsPage';
 
 // API
@@ -146,6 +145,7 @@ function App() {
 
         {/* Auth */}
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/signup" element={<SignUpPage />} />
 
         {/* Protected dashboard routes */}
         <Route
@@ -158,26 +158,7 @@ function App() {
             </ProtectedRoute>
           }
         />
-        <Route
-          path="/dashboard/devices"
-          element={
-            <ProtectedRoute>
-              <AppLayout>
-                <DevicesPage />
-              </AppLayout>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/dashboard/devices/:id"
-          element={
-            <ProtectedRoute>
-              <AppLayout>
-                <DeviceDetailPage />
-              </AppLayout>
-            </ProtectedRoute>
-          }
-        />
+
         <Route
           path="/dashboard/measurements"
           element={

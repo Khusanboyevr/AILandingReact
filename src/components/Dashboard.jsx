@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { getDashboard } from '../api/dashboardApi';
 import { isAuthenticated } from '../utils/auth';
+import AIFormulaTester from './AIFormulaTester';
 
 const Dashboard = () => {
   const [systemData, setSystemData] = useState({
@@ -158,41 +159,19 @@ const Dashboard = () => {
           </>
         );
 
-      case 'thermostats':
+      case 'formula':
         return (
-          <div className="devices-list" style={{ flex: 1 }}>
+          <div className="formula-tester-panel" style={{ flex: 1 }}>
             <h4 style={{ marginBottom: '16px', color: 'var(--text-main)', fontSize: '1.2rem' }}>
-              <i className='bx bx-check-shield' /> Connected Thermostats
+              <i className='bx bx-math' /> Matematik AI Modul
             </h4>
-            {systemData.devices.filter(d => d.type === 'thermostat').map((dev, idx) => (
-              <div key={idx} style={{ marginBottom: '16px', padding: '20px', background: 'rgba(59, 130, 246, 0.05)', borderRadius: '12px', border: '1px solid var(--card-border)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <b style={{ fontSize: '1.1rem' }}>{dev.name} <small>({dev.id})</small></b>
-                  <span style={{ color: 'var(--success)', fontWeight: 'bold', fontSize: '1.2rem' }}>{dev.temp}</span>
-                </div>
-                <div style={{ marginTop: '10px', color: 'var(--text-muted)' }}>Status: {dev.prediction}</div>
-              </div>
-            ))}
+            <div style={{ maxWidth: 600 }}>
+              <AIFormulaTester title="Sun'iy intellekt erkin test oynasi" />
+            </div>
           </div>
         );
 
-      case 'ovens':
-        return (
-          <div className="devices-list" style={{ flex: 1 }}>
-            <h4 style={{ marginBottom: '16px', color: 'var(--text-main)', fontSize: '1.2rem' }}>
-              <i className='bx bxs-hot' /> Drying Cabinets
-            </h4>
-            {systemData.devices.filter(d => d.type === 'oven').map((dev, idx) => (
-              <div key={idx} style={{ marginBottom: '16px', padding: '20px', background: 'rgba(239, 68, 68, 0.05)', borderRadius: '12px', border: '1px solid var(--card-border)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <b style={{ fontSize: '1.1rem', color: '#ef4444' }}>{dev.name} <small>({dev.id})</small></b>
-                  <span style={{ color: '#ef4444', fontWeight: 'bold', fontSize: '1.2rem' }}>{dev.temp}</span>
-                </div>
-                <div style={{ marginTop: '10px', color: 'var(--text-muted)' }}><i className='bx bx-error' /> {dev.prediction}</div>
-              </div>
-            ))}
-          </div>
-        );
+
 
       case 'alerts':
         return (
@@ -244,8 +223,7 @@ const Dashboard = () => {
 
   const tabsConfig = [
     { id: 'ai', icon: 'bx-brain', label: 'AI Predictions' },
-    { id: 'thermostats', icon: 'bx-check-shield', label: 'Thermostats (Live)' },
-    { id: 'ovens', icon: 'bxs-hot', label: 'Drying Cabinets' },
+    { id: 'formula', icon: 'bx-math', label: 'Try AI Formula' },
     { id: 'alerts', icon: 'bx-bell', label: 'Alert System' },
     { id: 'settings', icon: 'bx-slider-alt', label: 'API Settings' },
   ];

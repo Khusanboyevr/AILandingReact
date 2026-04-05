@@ -140,6 +140,11 @@ const LoginPage = () => {
             <div style={{ position: 'absolute', top: '50%', left: 0, right: 0, height: '1px', background: 'var(--card-border)' }} />
           </div>
 
+          <div style={{ textAlign: 'center', marginBottom: 20, fontSize: '0.9rem' }}>
+             <span style={{ color: 'var(--text-muted)' }}>Hisobingiz yoqmi? </span>
+             <Link to="/signup" style={{ color: 'var(--primary)', textDecoration: 'none' }}>Royxatdan otish</Link>
+          </div>
+
           <button
             type="button"
             className="btn btn-secondary login-submit demo-btn-login"

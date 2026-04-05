@@ -13,7 +13,9 @@ const MeasurementsPage = () => {
     humidity: '',
     power_usage: '',
     sensor_data: '',
+    formula: '',
   });
+  const [aiResult, setAiResult] = useState(null);
   const [errors, setErrors] = useState({});
 
   useEffect(() => {
@@ -38,36 +40,8 @@ const MeasurementsPage = () => {
   const validate = () => {
     const newErrors = {};
     
-    // Required fields
-    if (!form.device) newErrors.device = 'Please select a device.';
-    
-    if (!form.temperature) {
-      newErrors.temperature = 'Temperature is required.';
-    } else {
-      const temp = parseFloat(form.temperature);
-      if (isNaN(temp)) newErrors.temperature = 'Must be a valid number.';
-      else if (temp < -50 || temp > 500) newErrors.temperature = 'Temperature must be between -50°C and 500°C.';
-    }
-
-    // Optional fields validation
-    if (form.humidity) {
-      const hum = parseFloat(form.humidity);
-      if (isNaN(hum)) newErrors.humidity = 'Must be a valid number.';
-      else if (hum < 0 || hum > 100) newErrors.humidity = 'Humidity must be between 0% and 100%.';
-    }
-
-    if (form.power_usage) {
-      const pwr = parseFloat(form.power_usage);
-      if (isNaN(pwr)) newErrors.power_usage = 'Must be a valid number.';
-      else if (pwr < 0) newErrors.power_usage = 'Power usage cannot be negative.';
-    }
-
-    if (form.sensor_data) {
-      try {
-        JSON.parse(form.sensor_data);
-      } catch (e) {
-        newErrors.sensor_data = 'Must be valid JSON.';
-      }
+    if (!form.formula) {
+      newErrors.formula = 'Iltimos, formulani kiriting.';
     }
 
     return newErrors;
@@ -85,13 +59,12 @@ const MeasurementsPage = () => {
     setSubmitting(true);
     
     const payload = {
-      device: parseInt(form.device),
-      temperature: parseFloat(form.temperature).toFixed(2),
+      serial_number: 'AI-FORMULA-MODE',
+      device_name: 'Formula Sandbox Console',
+      device_type: 'thermostat',
+      temperature: 20.0,
+      sensor_data: JSON.stringify({ formula: form.formula })
     };
-
-    if (form.humidity) payload.humidity = parseFloat(form.humidity).toFixed(2);
-    if (form.power_usage) payload.power_usage = parseFloat(form.power_usage).toFixed(2);
-    if (form.sensor_data) payload.sensor_data = JSON.parse(form.sensor_data);
 
     const result = await createMeasurement(payload);
     
@@ -101,7 +74,11 @@ const MeasurementsPage = () => {
       if (result.offline) {
         toast.error(result.warning || 'Saved locally due to server error.', { icon: '💾' });
       } else {
-        toast.success('Measurement submitted successfully!');
+        toast.success('Measurement and Formula submitted successfully!');
+        const prediction = result.data?.prediction || result.data?.ai_prediction;
+        if (prediction) {
+          setAiResult(prediction);
+        }
       }
       setForm({
         device: form.device, // Keep selected device
@@ -109,6 +86,7 @@ const MeasurementsPage = () => {
         humidity: '',
         power_usage: '',
         sensor_data: '',
+        formula: '',
       });
       setErrors({});
     } else {
@@ -128,135 +106,37 @@ const MeasurementsPage = () => {
     <div>
       <div className="page-header">
         <div>
-          <h1 className="page-title">New Measurement</h1>
-          <p className="page-sub">Submit sensor readings manually</p>
+          <h1 className="page-title">AI Formula Sandbox</h1>
+          <p className="page-sub">Test complex mathematical formulas securely with AI</p>
         </div>
       </div>
 
       <div className="measure-layout">
         {/* Form */}
         <div className="glass-card measure-form-card">
-          <h3 style={{ marginBottom: 24 }}><i className="bx bx-send" /> Submit Reading</h3>
+          <h3 style={{ marginBottom: 24 }}><i className="bx bx-math" /> Formula Input Panel</h3>
 
           <form onSubmit={handleSubmit} className="modal-form">
-            {/* Device (Required) */}
-            <div className="form-field">
-              <label>Device <span style={{color: 'var(--accent)'}}>*</span></label>
-              <div className={`form-input-wrap ${errors.device ? 'error' : ''}`}>
-                <i className="bx bx-chip" />
-                <select name="device" value={form.device} onChange={handleChange} disabled={loadingDevices || submitting}>
-                  <option value="">
-                    {loadingDevices ? 'Loading devices...' : 'Select a device...'}
-                  </option>
-                  {devices.map((d) => (
-                    <option key={d.id} value={d.id}>
-                      {d.name || d.device_name || `Device #${d.id}`}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              {errors.device && <p className="form-error">{errors.device}</p>}
-            </div>
 
-            {/* Temperature (Required) */}
-            <div className="form-field">
-              <label>Temperature (°C) <span style={{color: 'var(--accent)'}}>*</span></label>
-              <div className={`form-input-wrap ${errors.temperature ? 'error' : ''}`}>
-                <i className="bx bx-thermometer" />
-                <input
-                  type="number"
-                  step="0.01"
-                  name="temperature"
-                  value={form.temperature}
-                  onChange={handleChange}
-                  placeholder="e.g. 37.5"
-                  disabled={submitting}
-                />
-              </div>
-              {errors.temperature && <p className="form-error">{errors.temperature}</p>}
-            </div>
 
-            {/* Humidity (Optional) */}
-            <div className="form-field">
-              <label>Humidity (%) <span style={{color: 'var(--text-muted)', fontSize: '0.8rem'}}>(Optional)</span></label>
-              <div className={`form-input-wrap ${errors.humidity ? 'error' : ''}`}>
-                <i className="bx bx-droplet" />
-                <input
-                  type="number"
-                  step="0.01"
-                  name="humidity"
-                  value={form.humidity}
-                  onChange={handleChange}
-                  placeholder="e.g. 65.0"
-                  disabled={submitting}
-                />
-              </div>
-              {errors.humidity && <p className="form-error">{errors.humidity}</p>}
-            </div>
-
-            {/* Power Usage (Optional) */}
-            <div className="form-field">
-              <label>Power Usage (kWh) <span style={{color: 'var(--text-muted)', fontSize: '0.8rem'}}>(Optional)</span></label>
-              <div className={`form-input-wrap ${errors.power_usage ? 'error' : ''}`}>
-                <i className="bx bx-bulb" />
-                <input
-                  type="number"
-                  step="0.01"
-                  name="power_usage"
-                  value={form.power_usage}
-                  onChange={handleChange}
-                  placeholder="e.g. 12.5"
-                  disabled={submitting}
-                />
-              </div>
-              {errors.power_usage && <p className="form-error">{errors.power_usage}</p>}
-            </div>
-            
-            {/* Sensor Data (Optional) */}
+            {/* Formula Field (Optional) */}
             <div className="form-field" style={{ gridColumn: '1 / -1' }}>
-              <label>Sensor Data (JSON) <span style={{color: 'var(--text-muted)', fontSize: '0.8rem'}}>(Optional)</span></label>
-              <div className={`form-input-wrap ${errors.sensor_data ? 'error' : ''}`}>
-                <i className="bx bx-data" />
+              <label>AI Formula / Savol (Masalan: Matematik formula) <span style={{color: 'var(--accent)', fontSize: '0.8rem'}}>(Yangi)</span></label>
+              <div className={`form-input-wrap ${errors.formula ? 'error' : ''}`}>
+                <i className="bx bx-math" />
                 <input
                   type="text"
-                  name="sensor_data"
-                  value={form.sensor_data}
+                  name="formula"
+                  value={form.formula}
                   onChange={handleChange}
-                  placeholder='e.g. {"fan_speed": 1200}'
+                  placeholder="Misol uchun: x^2 + 5x + 6 = 0, yechimini top"
                   disabled={submitting}
                 />
               </div>
-              {errors.sensor_data && <p className="form-error">{errors.sensor_data}</p>}
+              {errors.formula && <p className="form-error">{errors.formula}</p>}
             </div>
 
-            <div style={{ display: 'flex', gap: 12, marginBottom: 20, gridColumn: '1 / -1' }}>
-              <button 
-                type="button" 
-                className="btn btn-secondary" 
-                style={{ flex: 1, fontSize: '0.85rem', width: '100%' }}
-                disabled={submitting}
-                onClick={() => {
-                  if (!form.device) {
-                    toast.error('Please select a device first to randomize values');
-                    setErrors(prev => ({ ...prev, device: 'Required for randomization' }));
-                    return;
-                  }
-                  const dev = devices.find(d => d.id === parseInt(form.device));
-                  const isOven = (dev?.device_type || dev?.type) === 'drying_cabinet';
-                  setForm(prev => ({
-                    ...prev,
-                    temperature: (isOven ? 80 + Math.random() * 40 : 25 + Math.random() * 15).toFixed(2),
-                    humidity: (isOven ? 5 + Math.random() * 10 : 30 + Math.random() * 30).toFixed(2),
-                    power_usage: (Math.random() * 10 + 5).toFixed(2),
-                    sensor_data: JSON.stringify({ mode: 'auto', diagnostic_code: 0 })
-                  }));
-                  setErrors({});
-                  toast.success('Generated random values!');
-                }}
-              >
-                <i className="bx bx-dice-5" /> Auto-fill Random Ranges
-              </button>
-            </div>
+
 
             <button type="submit" className="btn btn-primary" disabled={submitting} style={{ width: '100%', marginTop: 8, gridColumn: '1 / -1' }}>
               {submitting ? (
@@ -276,17 +156,13 @@ const MeasurementsPage = () => {
           <h3>Submission Guidelines</h3>
           <p>Please follow these instructions when manually submitting data:</p>
           <ul className="info-list">
+             <li>
+                <i className="bx bx-info-circle" />
+                <span>Ushbu Maxsus bo'lim faqat formulalar va erkin mantiqiy savollarni tahlil qilish uchun mo'ljallangan. Boshqa datchik moslamalari ataylab o'chirib qo'yilgan.</span>
+              </li>
             <li>
-              <i className="bx bx-check-circle" />
-              <span><strong>Device Selection</strong> is mandatory. You must link the reading to a registered device.</span>
-            </li>
-            <li>
-              <i className="bx bx-check-circle" />
-              <span><strong>Temperature</strong> is strictly required for all device types. Ensure accuracy.</span>
-            </li>
-            <li>
-              <i className="bx bx-check-circle" />
-              <span><strong>Humidity & Power</strong> are optional but recommended for better AI predictions.</span>
+              <i className="bx bx-math" />
+              <span><strong>AI Formula / Savol</strong>: Bu maydonga ixtiyoriy misol yoki formulani kiritishingiz mumkin, va AI sizga tahlil bilan birga uni ishlab beradi.</span>
             </li>
             <li>
               <i className="bx bx-time" />
@@ -294,6 +170,44 @@ const MeasurementsPage = () => {
             </li>
           </ul>
         </div>
+
+        {/* AI Result Presentation! */}
+        {aiResult && (
+          <div className="glass-card measure-info-card" style={{ marginTop: 24, borderLeft: '4px solid #10b981' }}>
+            <div className="info-icon" style={{ background: 'rgba(16, 185, 129, 0.1)', color: '#10b981' }}>
+              <i className="bx bx-check-double" />
+            </div>
+            <h3 style={{ color: '#10b981' }}>AI Formula Result & Feedback</h3>
+            <p><strong>Status:</strong> {aiResult.status_label || aiResult.status || 'Success'}</p>
+            {aiResult.advice && (
+              <div style={{ marginTop: 12, padding: '12px', background: 'rgba(255,255,255,0.05)', borderRadius: '8px' }}>
+                <strong>AI Advice/Yechim:</strong><br />
+                <span style={{ color: 'var(--text-light)', whiteSpace: 'pre-wrap' }}>{aiResult.advice}</span>
+              </div>
+            )}
+            {aiResult.recommendation && (
+              <div style={{ marginTop: 12, padding: '12px', background: 'rgba(139, 92, 246, 0.1)', borderRadius: '8px' }}>
+                <strong style={{ color: '#8b5cf6' }}>Recommendation:</strong><br />
+                {aiResult.recommendation}
+              </div>
+            )}
+            {aiResult.gemini_response && (
+              <div style={{ marginTop: 12, padding: '12px', background: 'rgba(59, 130, 246, 0.1)', borderRadius: '8px' }}>
+                <strong style={{ color: '#3b82f6' }}>Raw AI Details:</strong><br />
+                <span style={{ whiteSpace: 'pre-wrap', fontFamily: 'monospace', fontSize: '0.85rem' }}>
+                  {typeof aiResult.gemini_response === 'string' ? aiResult.gemini_response : JSON.stringify(aiResult.gemini_response, null, 2)}
+                </span>
+              </div>
+            )}
+            <button 
+              className="btn btn-secondary" 
+              style={{ width: '100%', marginTop: 24 }}
+              onClick={() => setAiResult(null)}
+            >
+              Yopish
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -20,8 +20,7 @@ const AppLayout = ({ children }) => {
 
   const navItems = [
     { to: '/dashboard', icon: 'bx-grid-alt', label: 'Dashboard', end: true },
-    { to: '/dashboard/devices', icon: 'bx-devices', label: 'Devices' },
-    { to: '/dashboard/measurements', icon: 'bx-line-chart', label: 'Measurements' },
+    { to: '/dashboard/measurements', icon: 'bx-math', label: 'AI Formula' },
   ];
 
   return (

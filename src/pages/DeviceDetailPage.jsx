@@ -40,8 +40,8 @@ const DeviceDetailPage = () => {
   }, [id]);
 
   const measurements = data?.measurements || data?.latest_measurements || [];
-  const tempReadings = measurements.map((m) => parseFloat(m.temperature || 0));
-  const humReadings = measurements.map((m) => parseFloat(m.humidity || 0));
+  const tempReadings = measurements.map((m) => parseFloat(m.temperature || m.temp || 0));
+  const humReadings = measurements.map((m) => parseFloat(m.humidity !== undefined ? m.humidity : (m.humid !== undefined ? m.humid : 0)));
   const labels = measurements.map((m, i) =>
     m.timestamp ? new Date(m.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : `#${i + 1}`
   );
@@ -129,18 +129,23 @@ const DeviceDetailPage = () => {
             {[
               {
                 label: 'Latest Temperature',
-                value: lastM ? `${lastM.temperature}°C` : '—',
+                value: lastM ? `${lastM.temperature || lastM.temp}°C` : '—',
                 icon: 'bx-thermometer', color: '#f59e0b',
               },
               {
                 label: 'Latest Humidity',
-                value: lastM ? `${lastM.humidity}%` : '—',
+                value: lastM ? `${lastM.humidity !== undefined ? lastM.humidity : (lastM.humid !== undefined ? lastM.humid : '—')}%` : '—',
                 icon: 'bx-droplet', color: '#3b82f6',
               },
               {
                 label: 'Total Readings',
-                value: measurements.length,
+                value: data?.total_measurements !== undefined ? data.total_measurements : measurements.length,
                 icon: 'bx-data', color: '#8b5cf6',
+              },
+              {
+                label: 'AI Risk Level',
+                value: data?.failure_prob !== undefined ? `${(data.failure_prob * 100).toFixed(1)}%` : '—',
+                icon: 'bx-brain', color: '#ef4444',
               },
             ].map((s, i) => (
               <div key={i} className="stat-card-app glass-card">
@@ -154,6 +159,31 @@ const DeviceDetailPage = () => {
               </div>
             ))}
           </div>
+
+          {data?.advice && (
+            <div className="glass-card" style={{ 
+              marginTop: 24, 
+              padding: '16px 20px', 
+              borderLeft: '4px solid #8b5cf6',
+              background: 'rgba(139, 92, 246, 0.05)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 16
+            }}>
+              <i className="bx bx-bot" style={{ fontSize: '2rem', color: '#8b5cf6' }} />
+              <div>
+                <span style={{ fontSize: '0.85rem', color: '#94a3b8', display: 'block' }}>AI Prediction Insight</span>
+                <span style={{ fontSize: '1.05rem', fontWeight: 600, color: 'var(--text-light)' }}>
+                  {data?.advice}
+                </span>
+                {data?.latest_prediction?.recommendation && (
+                   <div style={{ marginTop: 4, fontSize: '0.9rem', color: '#94a3b8' }}>
+                     {data.latest_prediction.recommendation}
+                   </div>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Chart */}
           <div className="glass-card chart-card" style={{ marginTop: 24 }}>
@@ -185,8 +215,8 @@ const DeviceDetailPage = () => {
                 {[...measurements].reverse().slice(0, 20).map((m, i) => (
                   <div key={i} className="devices-table-row">
                     <span style={{ color: 'var(--text-muted)' }}>{measurements.length - i}</span>
-                    <span style={{ color: '#f59e0b', fontWeight: 600 }}>{m.temperature}°C</span>
-                    <span style={{ color: '#3b82f6', fontWeight: 600 }}>{m.humidity}%</span>
+                    <span style={{ color: '#f59e0b', fontWeight: 600 }}>{m.temperature || m.temp}°C</span>
+                    <span style={{ color: '#3b82f6', fontWeight: 600 }}>{m.humidity !== undefined ? m.humidity : (m.humid !== undefined ? m.humid : '—')}%</span>
                     <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
                       {m.timestamp ? new Date(m.timestamp).toLocaleString() : '—'}
                     </span>

@@ -14,7 +14,11 @@ const initializeData = () => {
 initializeData();
 
 const demoService = {
-  isDemoMode: () => true, // Permanently force simulation mode, ignoring real API
+  isDemoMode: () => {
+    const val = localStorage.getItem(IS_DEMO_KEY);
+    if (val === null) return true; // Default to demo mode as required
+    return val === 'true';
+  },
   
   toggleDemoMode: (value) => {
     const wasDemo = demoService.isDemoMode();
@@ -156,12 +160,32 @@ const demoService = {
   addMeasurement: async (data) => {
     await new Promise(r => setTimeout(r, 700));
     const devices = JSON.parse(localStorage.getItem(DEVICES_KEY));
-    const index = devices.findIndex(d => d.id === parseInt(data.device));
+    
+    const targetId = parseInt(data.device_id || data.device);
+    let index = devices.findIndex(d => d.id === targetId);
+    
+    // Auto-create device if it doesn't exist and we have serial in flexible payload!
+    if (index === -1 && data.serial) {
+        const newDevice = {
+            id: Math.max(...devices.map(d => d.id), 0) + 1,
+            name: data.name || 'Unknown',
+            serial_number: data.serial,
+            device_type: data.type || 'thermostat',
+            status: 'online',
+            is_active: true,
+            is_online: true,
+            measurements: []
+        };
+        devices.push(newDevice);
+        index = devices.length - 1;
+    }
     
     if (index !== -1) {
+      const tempVal = typeof data.temp !== 'undefined' ? data.temp : data.temperature;
+      const humidVal = typeof data.humid !== 'undefined' ? data.humid : data.humidity;
       const newMeasurement = {
-        temperature: parseFloat(data.temperature).toFixed(1),
-        humidity: parseFloat(data.humidity).toFixed(1),
+        temperature: parseFloat(tempVal).toFixed(1),
+        humidity: humidVal ? parseFloat(humidVal).toFixed(1) : null,
         timestamp: data.timestamp || new Date().toISOString()
       };
 

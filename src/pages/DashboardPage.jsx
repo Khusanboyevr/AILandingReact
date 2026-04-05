@@ -60,7 +60,8 @@ const DashboardPage = () => {
   }, []);
 
   // Compute stats from data
-  const devices = data?.devices || data?.results || [];
+  // The backend might return a single DeviceDashboard or a list of devices. We ensure `devices` always resolves to an array.
+  const devices = data?.devices || data?.results || (Array.isArray(data) ? data : (data?.device ? [data.device] : []));
   const totalDevices = devices.length;
   const onlineDevices = devices.filter(
     (d) => d.is_online === true || d.status === 'online' || d.is_active === true || d.status === 'active'
@@ -152,7 +153,7 @@ const DashboardPage = () => {
             )}
           </div>
           
-          {demoService.isDemoMode() && (
+          {(data?.advice || data?.overall_status || demoService.isDemoMode()) && (
             <div className="glass-card" style={{ 
               marginTop: 16, 
               padding: '12px 20px', 
@@ -164,13 +165,17 @@ const DashboardPage = () => {
             }}>
               <i className="bx bx-brain" style={{ fontSize: '1.5rem', color: '#8b5cf6' }} />
               <div>
-                <span style={{ fontSize: '0.8rem', color: '#94a3b8', display: 'block' }}>Predictive Insight (98% confidence)</span>
+                <span style={{ fontSize: '0.8rem', color: '#94a3b8', display: 'block' }}>
+                  Predictive Insight {data?.failure_prob !== undefined && `(Risk: ${(data.failure_prob * 100).toFixed(1)}%)`}
+                </span>
                 <span style={{ fontSize: '0.95rem', fontWeight: 600 }}>
-                  {devices.some(d => d.status === 'critical') 
-                    ? "⚠ Critical anomaly detected in drying system. Immediate action recommended." 
-                    : devices.some(d => d.status === 'warning')
-                    ? "⚠ Risk increasing in next 2 hours. Monitor thermostat stability."
-                    : "✔ All systems stable. No anomalies predicted in next 12 hours."}
+                  {data?.advice || (
+                    devices.some(d => d.status === 'critical') 
+                      ? "⚠ Critical anomaly detected in drying system. Immediate action recommended." 
+                      : devices.some(d => d.status === 'warning')
+                      ? "⚠ Risk increasing in next 2 hours. Monitor thermostat stability."
+                      : "✔ All systems stable. No anomalies predicted in next 12 hours."
+                  )}
                 </span>
               </div>
             </div>
@@ -225,54 +230,7 @@ const DashboardPage = () => {
         )}
       </div>
 
-      {/* Devices table */}
-      <div className="glass-card" style={{ marginTop: 24, overflow: 'hidden' }}>
-        <div className="chart-card-header">
-          <h3><i className="bx bx-list-ul" /> All Devices</h3>
-          <Link to="/dashboard/devices" className="btn-sm primary">View All →</Link>
-        </div>
 
-        {loading ? (
-          <div style={{ padding: '24px' }}><LoadingSkeleton rows={3} /></div>
-        ) : devices.length === 0 ? (
-          <EmptyState icon="bx-devices" title="No devices found" message="Add your first device to get started." />
-        ) : (
-          <div className="devices-table">
-            <div className="devices-table-head">
-              <span>Device</span>
-              <span>Type</span>
-              <span>Status</span>
-              <span>Last Measurement</span>
-              <span>Action</span>
-            </div>
-            {devices.map((dev) => {
-              const ms = dev.measurements || dev.latest_measurements || [];
-              const last = ms[ms.length - 1];
-              return (
-                <div key={dev.id} className="devices-table-row">
-                  <span className="dev-name" data-label="Device">
-                    <span style={{display: 'flex', alignItems: 'center', gap: '8px'}}><i className="bx bx-chip" /> {dev.name || dev.device_name || `Device #${dev.id}`}</span>
-                  </span>
-                  <span className="dev-type" data-label="Type">{dev.device_type || dev.type || 'N/A'}</span>
-                  <span data-label="Status">
-                    <span className="status-badge" style={{ background: `${statusColor(dev)}20`, color: statusColor(dev) }}>
-                      ● {dev.status || (dev.is_active ? 'Online' : 'Offline')}
-                    </span>
-                  </span>
-                  <span className="dev-measurement" data-label="Measurement">
-                    {last ? `${last.temperature}°C · ${last.humidity}%` : '—'}
-                  </span>
-                  <span data-label="Action">
-                    <Link to={`/dashboard/devices/${dev.id}`} className="btn-sm primary" style={{ fontSize: '0.78rem' }}>
-                      Details
-                    </Link>
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
     </div>
   );
 };

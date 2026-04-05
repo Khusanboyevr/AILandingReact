@@ -1,7 +1,7 @@
 import axios from 'axios';
 import demoService from './demoService';
 
-const BASE_URL = '';
+const BASE_URL = import.meta.env.MODE === 'development' ? '' : 'https://dastur-aw8r.onrender.com';
 
 const apiClient = axios.create({
   baseURL: BASE_URL,
@@ -10,8 +10,8 @@ const apiClient = axios.create({
 
 // Interceptor to handle Demo Mode
 apiClient.interceptors.request.use(async (config) => {
-  // Check if Demo Mode is active
-  if (demoService.isDemoMode()) {
+  // Check if Demo Mode is active BUT exclude /analyze because it must ALWAYS hit real backend
+  if (demoService.isDemoMode() && !(config.url || '').includes('/analyze')) {
     console.log(`🛠 [DEMO MODE] Intercepting: [${config.method.toUpperCase()}] ${config.url}`);
     
     // Determine which mock function to call based on URL and method
@@ -39,6 +39,8 @@ apiClient.interceptors.request.use(async (config) => {
       } else if (url.includes('/devices')) {
         if (config.method === 'get') mockResponse = await demoService.getDevices();
         else if (config.method === 'post') mockResponse = await demoService.addDevice(config.data);
+      } else if (url.includes('/dashboard/create') || url.includes('/predict') || (url.includes('/measurements') && config.method === 'post')) {
+          mockResponse = await demoService.addMeasurement(config.data);
       } else if (url.includes('/dashboard')) {
         const parts = url.split('/').filter(Boolean);
         const lastPart = parts[parts.length - 1];
@@ -48,13 +50,9 @@ apiClient.interceptors.request.use(async (config) => {
           mockResponse = await demoService.getDashboard();
         }
       } else if (url.includes('/measurements')) {
-        if (config.method === 'post') {
-          mockResponse = await demoService.addMeasurement(config.data);
-        } else {
-          const params = new URLSearchParams(url.split('?')[1]);
-          const deviceId = params.get('device_id');
-          mockResponse = await demoService.getMeasurements(deviceId);
-        }
+        const params = new URLSearchParams(url.split('?')[1]);
+        const deviceId = params.get('device_id');
+        mockResponse = await demoService.getMeasurements(deviceId);
       } else if (url === '/' || url === '' || url.includes('/health')) {
         // Health check
         mockResponse = { status: 'ok' };
